@@ -21,7 +21,10 @@ pin numbers instead (the `-g` flag to `gpio`):
 ```javascript
 gpio.BCM_GPIO = true;
 ```
-
+or to use the physical pin numbers (the `-1` flag to `gpio`):
+```javascript
+gpio.PHYS_GPIO = true;
+```
 ### Methods
 ```javascript
 gpio.input(1).then(function() {

@@ -129,5 +129,39 @@
       });
     });
   });
+  
+  tap.test('should use correct arguments to gpio', function(t) {
+    cmds = [];
+    gpio.BCM_GPIO = false;
+    gpio.PHYS_GPIO = false;
+    return gpio.input(3).then(function() {
+      t.same(cmds, ['gpio mode 3 in'], 'both false gives no args');
+    })
+    .then(function() {
+      cmds = [];
+      gpio.BCM_GPIO = true;
+      gpio.PHYS_GPIO = false;
+      return gpio.input(3).then(function() {
+        t.same(cmds, ['gpio -g mode 3 in'], 'with BCM_GPIO gives -g arg');
+      });
+    })
+    .then(function() {
+      cmds = [];
+      gpio.BCM_GPIO = true;
+      gpio.PHYS_GPIO = true;
+      return gpio.input(3).then(function() {
+        t.same(cmds, ['gpio -g mode 3 in'], 'with BCM_GPIO and PHYS_GPIO still gives -g arg');
+      });
+    })
+    .then(function() {
+      cmds = [];
+      gpio.BCM_GPIO = false;
+      gpio.PHYS_GPIO = true;
+      return gpio.input(3).then(function() {
+        t.same(cmds, ['gpio -1 mode 3 in'], 'with PHYS_GPIO still gives -1 arg');
+      });
+    });
+  });
 
 })();
+

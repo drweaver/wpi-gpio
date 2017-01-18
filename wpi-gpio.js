@@ -10,6 +10,7 @@
 
   var gpio = module.exports;
   gpio.BCM_GPIO = false;
+  gpio.PHYS_GPIO = false;
 
   /**
    * Exec a call to gpio
@@ -22,8 +23,8 @@
   var gpioExec = function(method, pin, args) {
     pin = parseInt(pin, 10) || 0;
     args = args || [];
-
-    var flag = gpio.BCM_GPIO ? '-g' : '';
+  
+    var flag = gpio.BCM_GPIO ? '-g' : gpio.PHYS_GPIO ? '-1' : '';
     var cmd = ['gpio', flag, method, pin, args.join(' ')].join(' ');
     cmd = cmd.replace(/\s+/g, ' ').trim();
 
