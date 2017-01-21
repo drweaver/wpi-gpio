@@ -14,7 +14,9 @@ Usage
 var gpio = require('wpi-gpio');
 ```
 
-### Pin numbering
+### Options
+
+#### Pin numbering
 By default, `wpi-gpio` uses the WiringPi pin numbers. To use Broadcom GPIO (BCM)
 pin numbers instead (the `-g` flag to `gpio`):
 
@@ -24,6 +26,13 @@ gpio.BCM_GPIO = true;
 or to use the physical pin numbers (the `-1` flag to `gpio`):
 ```javascript
 gpio.PHYS_GPIO = true;
+```
+
+#### Synchronous vs Asynchronous
+By default `wpi-gpio` executes the gpio command asynchronously, to change this 
+to a synchronous call set the following flag:
+```javascript
+gpio.SYNC = true;
 ```
 ### Methods
 ```javascript
