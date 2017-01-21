@@ -7,10 +7,12 @@
   'use strict';
 
   var exec = require('child_process').exec;
+  var execSync = require('child_process').execSync;
 
   var gpio = module.exports;
   gpio.BCM_GPIO = false;
   gpio.PHYS_GPIO = false;
+  gpio.SYNC = false;
 
   /**
    * Exec a call to gpio
@@ -29,9 +31,17 @@
     cmd = cmd.replace(/\s+/g, ' ').trim();
 
     return new Promise(function(res, rej) {
-      exec(cmd, function(err, stdout, stderr) {
-        return err ? rej(stderr) : res(stdout);
-      });
+      if( gpio.SYNC ) {
+        try {
+          res(execSync(cmd));
+        } catch(err) {
+          rej(err); 
+        }
+      } else {
+        exec(cmd, function(err, stdout, stderr) {
+          return err ? rej(stderr) : res(stdout);
+        });
+      }
     });
   };
 

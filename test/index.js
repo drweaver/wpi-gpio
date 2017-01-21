@@ -11,12 +11,19 @@
 
   var cmds = [];
   var stdout = '';
+  var sync = false;
 
   var gpio = proxyquire('../wpi-gpio', {
     child_process: {
       exec: function(cmd, callback) {
         cmds.push(cmd);
         callback(null, stdout, '');
+        sync = false;
+      },
+      execSync: function(cmd) {
+        cmds.push(cmd);
+        sync = true;
+        return stdout;
       }
     }
   });
@@ -26,11 +33,13 @@
     gpio.BCM_GPIO = false;
     return gpio.input(3).then(function() {
       t.same(cmds, ['gpio mode 3 in'], 'input method executes correct command');
+      t.false(sync, 'called exec method (async)');
     }).then(function() {
       cmds = [];
       gpio.BCM_GPIO = true;
       return gpio.input(3).then(function() {
         t.same(cmds, ['gpio -g mode 3 in'], 'input method with BCM_GPIO executes correct command');
+        t.false(sync, 'called exec method (async)');
       });
     });
   });
@@ -40,11 +49,13 @@
     gpio.BCM_GPIO = false;
     return gpio.output(4).then(function() {
       t.same(cmds, ['gpio mode 4 out'], 'output method executes correct command');
+      t.false(sync, 'called exec method (async)');
     }).then(function() {
       cmds = [];
       gpio.BCM_GPIO = true;
       return gpio.output(4).then(function() {
         t.same(cmds, ['gpio -g mode 4 out'], 'output method with BCM_GPIO executes correct command');
+        t.false(sync, 'called exec method (async)');
       });
     });
   });
@@ -54,11 +65,13 @@
     gpio.BCM_GPIO = false;
     return gpio.output(5, 1).then(function() {
       t.same(cmds, ['gpio write 5 1', 'gpio mode 5 out'], 'output method with initial value executes correct commands');
+      t.false(sync, 'called exec method (async)');
     }).then(function() {
       cmds = [];
       gpio.BCM_GPIO = true;
       return gpio.output(5, 1).then(function() {
         t.same(cmds, ['gpio -g write 5 1', 'gpio -g mode 5 out'], 'output method with initial value and BCM_GPIO executes correct commands');
+        t.false(sync, 'called exec method (async)');
       });
     });
   });
@@ -70,11 +83,13 @@
     return gpio.read(6).then(function(val) {
       t.same(cmds, ['gpio read 6'], 'read method executes correct command');
       t.equal(val, 1, 'read method returns numeric value');
+      t.false(sync, 'called exec method (async)');
     }).then(function() {
       cmds = [];
       gpio.BCM_GPIO = true;
       return gpio.read(6).then(function(val) {
         t.same(cmds, ['gpio -g read 6'], 'read method with BCM_GPIO executes correct command');
+        t.false(sync, 'called exec method (async)');
       });
     });
   });
@@ -85,11 +100,13 @@
     gpio.BCM_GPIO = false;
     return gpio.write(7, 0).then(function() {
       t.same(cmds, ['gpio write 7 0'], 'write method executes correct command');
+      t.false(sync, 'called exec method (async)');
     }).then(function() {
       cmds = [];
       gpio.BCM_GPIO = true;
       return gpio.write(7, 0).then(function() {
         t.same(cmds, ['gpio -g write 7 0'], 'write method with BCM_GPIO executes correct command');
+        t.false(sync, 'called exec method (async)');
       });
     });
   });
@@ -101,6 +118,7 @@
       t.same(cmds, [
         'gpio mode 8 out', 'gpio write 8 0', 'gpio write 8 1', 'gpio write 8 0'
       ], 'sequence method executes correct commands');
+      t.false(sync, 'called exec method (async)');
     }).then(function() {
       cmds = [];
       gpio.BCM_GPIO = true;
@@ -108,6 +126,7 @@
         t.same(cmds, [
           'gpio -g mode 8 out', 'gpio -g write 8 0', 'gpio -g write 8 1', 'gpio -g write 8 0'
         ], 'sequence method with BCM_GPIO executes correct commands');
+        t.false(sync, 'called exec method (async)');
       });
     });
   });
@@ -119,6 +138,7 @@
       t.same(cmds, [
         'gpio mode 9 out', 'gpio write 9 1', 'gpio write 9 0', 'gpio write 9 1'
       ], 'tap method executes correct commands');
+      t.false(sync, 'called exec method (async)');
     }).then(function() {
       cmds = [];
       gpio.BCM_GPIO = true;
@@ -126,6 +146,7 @@
         t.same(cmds, [
           'gpio -g mode 9 out', 'gpio -g write 9 1', 'gpio -g write 9 0', 'gpio -g write 9 1'
         ], 'tap method with BCM_GPIO executes correct commands');
+        t.false(sync, 'called exec method (async)');
       });
     });
   });
@@ -136,6 +157,7 @@
     gpio.PHYS_GPIO = false;
     return gpio.input(3).then(function() {
       t.same(cmds, ['gpio mode 3 in'], 'both false gives no args');
+      t.false(sync, 'called exec method (async)');
     })
     .then(function() {
       cmds = [];
@@ -143,6 +165,7 @@
       gpio.PHYS_GPIO = false;
       return gpio.input(3).then(function() {
         t.same(cmds, ['gpio -g mode 3 in'], 'with BCM_GPIO gives -g arg');
+        t.false(sync, 'called exec method (async)');
       });
     })
     .then(function() {
@@ -151,6 +174,7 @@
       gpio.PHYS_GPIO = true;
       return gpio.input(3).then(function() {
         t.same(cmds, ['gpio -g mode 3 in'], 'with BCM_GPIO and PHYS_GPIO still gives -g arg');
+        t.false(sync, 'called exec method (async)');
       });
     })
     .then(function() {
@@ -159,6 +183,28 @@
       gpio.PHYS_GPIO = true;
       return gpio.input(3).then(function() {
         t.same(cmds, ['gpio -1 mode 3 in'], 'with PHYS_GPIO still gives -1 arg');
+        t.false(sync, 'called exec method (async)');
+      });
+    });
+  });
+
+  // this test is duplicated by testing gpio.output with an initial value
+  tap.test('should use correct sync/async method to exec gpio command', function(t) {
+    cmds = [];
+    gpio.BCM_GPIO = false;
+    gpio.PHYS_GPIO = false;
+    gpio.SYNC = false;
+    return gpio.write(7, 0).then(function() {
+      t.same(cmds, ['gpio write 7 0'], 'write method executes correct command');
+      t.false(sync, 'called exec method (async)');
+    }).then(function() {
+      cmds = [];
+      gpio.BCM_GPIO = false;
+      gpio.PHYS_GPIO = false;
+      gpio.SYNC = true;
+      return gpio.write(7, 0).then(function() {
+        t.same(cmds, ['gpio write 7 0'], 'write method executes correct command');
+        t.true(sync, 'called execSync method (sync)');
       });
     });
   });
